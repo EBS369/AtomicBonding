@@ -18,3 +18,6 @@ Note: Wonderland bonding is currently disabled.
 1. Purchase bond: atomic / in one transaction, no unexpected price actions.
 2. Pair & bond price monitoring. On-chain prices, slippage & fees inclusive.
 3. Redeem bond: safe to use untrusted account as invoker.
+
+## Example
+![AtomicBond](docs/AtomicBond.png)
