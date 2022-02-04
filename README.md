@@ -8,13 +8,13 @@ Note: Wonderland bonding is currently disabled.
 2. Bond $TIME With $MIM
 
 ### Redeeming bond
-1. Redeem $TIME / Staked $TIME
+1. Redeem $TIME
 
-## Issue
-1. Exposure to high slippage / price action in 2 transactions (purchase bond).
-2. Inability to purchase bond at optimal prices without constant pair & bond price monitoring.
+## Issue (purchase bond)
+1. Exposure to price actions in two transactions.
+2. Non-optimal prices without pair & bond price monitoring.
 
 ## Solution
-1. Purchase bond: Atomic / in one transaction.
-2. Automated pair & bond price monitoring. Price from on-chain trade pair, slippage & fees inclusive.
-3. Redeem bond: Safe to invoke from untrusted accounts.
+1. Purchase bond: atomic / in one transaction, no unexpected price actions.
+2. Pair & bond price monitoring. On-chain prices, slippage & fees inclusive.
+3. Redeem bond: safe to use untrusted account as invoker.
