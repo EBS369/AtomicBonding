@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 package main
 
 import (
@@ -29,7 +31,7 @@ type Account struct {
 }
 
 const (
-	MinROI = int64(6_90) // 6.90%
+	Min_ROI = int64(6_90) // 6.90%
 )
 
 var (
@@ -126,6 +128,7 @@ func EstimateMinAmountOut(srcReserve *big.Int, destReserve *big.Int, srcAmount *
 	Y.Mul(destReserve, srcAmount)
 	X.Add(srcReserve, srcAmount)
 	minAmountOut.Div(&Y, &X)
+	// 0.3% Platform / LP Fees
 	return minAmountOut.Div(minAmountOut.Mul(&minAmountOut, int997), int1000)
 }
 
@@ -278,39 +281,35 @@ func redeem() {
 	)
 }
 
-func cron() {
-	var err error
-
-	client := HTTPSClient()
-	defer func() {
-		if client != nil {
-			client.Close()
-		}
-	}()
-
-	s := gocron.NewScheduler(time.Local)
-	_, err = s.Cron("56 21 * * *").Do(redeem)
-	if err != nil {
-		log.Println(err)
-	}
-	_, err = s.Cron("56 13 * * *").Do(redeem)
-	if err != nil {
-		log.Println(err)
-	}
-	_, err = s.Cron("56 5 * * *").Do(redeem)
-	if err != nil {
-		log.Println(err)
-	}
-	s.Every("15s").Do(func() { renewBalance(client) })
-	s.StartAsync()
-}
-
 func main() {
-	cron()
-
-	func() {
+	go func() {
 		var err error
 
+		client := HTTPSClient()
+		defer func() {
+			if client != nil {
+				client.Close()
+			}
+		}()
+
+		s := gocron.NewScheduler(time.Local)
+		_, err = s.Cron("56 21 * * *").Do(redeem)
+		if err != nil {
+			log.Println(err)
+		}
+		_, err = s.Cron("56 13 * * *").Do(redeem)
+		if err != nil {
+			log.Println(err)
+		}
+		_, err = s.Cron("56 5 * * *").Do(redeem)
+		if err != nil {
+			log.Println(err)
+		}
+		s.Every("15s").Do(func() { renewBalance(client) })
+		s.StartAsync()
+	}()
+
+	go func() {
 		client := HTTPSClient()
 		defer func() {
 			if client != nil {
@@ -387,9 +386,9 @@ func main() {
 				roi.Div(&roi, bondPriceInUSD)
 				roiInt64 = roi.Int64()
 
-				log.Println(balanceString, "$TIME | MIM", roi.String(), "/", MinROI, "|", bondPriceInUSD.String(), "/", price.String())
+				log.Println(balanceString, "$TIME | MIM", roi.String(), "/", Min_ROI, "|", bondPriceInUSD.String(), "/", price.String())
 
-				if roiInt64 >= MinROI && roiInt64 < 5000 {
+				if roiInt64 >= Min_ROI && roiInt64 < 5000 {
 					log.Println("Bond!")
 
 					RunAtomicBond(
