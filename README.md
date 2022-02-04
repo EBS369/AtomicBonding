@@ -16,5 +16,5 @@ Note: Wonderland bonding is currently disabled.
 
 ## Solution
 1. Purchase bond: Atomic / in one transaction.
-2. Automated pair & bond price monitoring.
+2. Automated pair & bond price monitoring. Price from on-chain trade pair, slippage & fees inclusive.
 3. Redeem bond: Safe to invoke from untrusted accounts.
