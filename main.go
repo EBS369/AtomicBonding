@@ -10,6 +10,8 @@ import (
 	"main/TimeBondDepository"
 	"math"
 	"math/big"
+	"os"
+	"os/signal"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -306,106 +308,112 @@ func cron() {
 func main() {
 	cron()
 
-	var err error
+	func() {
+		var err error
 
-	client := HTTPSClient()
-	defer func() {
-		if client != nil {
-			client.Close()
-		}
-	}()
+		client := HTTPSClient()
+		defer func() {
+			if client != nil {
+				client.Close()
+			}
+		}()
 
-	joePairInstance, err := JoePair.NewJoePair(MimTimeJoePairAddress, client)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	timeBondDepositoryInstance, err := TimeBondDepository.NewTimeBondDepository(MimTimeBondDepositoryAddress, client)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	wssClient := WSSClient()
-	defer func() {
-		if wssClient != nil {
-			defer wssClient.Close()
-		}
-	}()
-
-	headers := make(chan *types.Header)
-	defer close(headers)
-
-	sub, err := wssClient.SubscribeNewHead(context.Background(), headers)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	defer sub.Unsubscribe()
-
-	var minSwapAmount *big.Int
-	var priceFloat big.Float
-	var price, roi big.Int
-	var roiInt64 int64
-	for {
-		select {
-		case err := <-sub.Err():
+		joePairInstance, err := JoePair.NewJoePair(MimTimeJoePairAddress, client)
+		if err != nil {
 			log.Println(err)
 			return
-		case <-headers:
-			if balanceUint64 == 0 {
-				log.Println("balance is zero")
-				continue
-			}
+		}
+		timeBondDepositoryInstance, err := TimeBondDepository.NewTimeBondDepository(MimTimeBondDepositoryAddress, client)
+		if err != nil {
+			log.Println(err)
+			return
+		}
 
-			reserves, err := joePairInstance.GetReserves(&bind.CallOpts{})
-			if err != nil {
+		wssClient := WSSClient()
+		defer func() {
+			if wssClient != nil {
+				defer wssClient.Close()
+			}
+		}()
+
+		headers := make(chan *types.Header)
+		defer close(headers)
+
+		sub, err := wssClient.SubscribeNewHead(context.Background(), headers)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer sub.Unsubscribe()
+
+		var minSwapAmount *big.Int
+		var priceFloat big.Float
+		var price, roi big.Int
+		var roiInt64 int64
+		for {
+			select {
+			case err := <-sub.Err():
 				log.Println(err)
-				continue
-			}
-
-			bondPriceInUSD, err := timeBondDepositoryInstance.BondPriceInUSD(&bind.CallOpts{})
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-
-			minSwapAmount = EstimateMinAmountOut(reserves.Reserve1, reserves.Reserve0, balance)
-
-			minSwapAmountFloat, ok := new(big.Float).SetString(minSwapAmount.String())
-			if !ok {
-				log.Println("cannot cast EstimateMinAmountOut() output of type *big.Int as type *big.Float")
-				continue
-			}
-
-			priceFloat.Quo(minSwapAmountFloat, balanceFloat).Int(&price)
-			roi.Sub(&price, bondPriceInUSD)
-			roi.Mul(&roi, int10000)
-			roi.Div(&roi, bondPriceInUSD)
-			roiInt64 = roi.Int64()
-
-			log.Println(balanceString, "$TIME | MIM", roi.String(), "/", MinROI, "|", bondPriceInUSD.String(), "/", price.String())
-
-			if roiInt64 >= MinROI && roiInt64 < 5000 {
-				log.Println("Bond!")
-
-				RunAtomicBond(
-					Gwei10,
-					FunderAddress,
-					MinterAddress,
-					balance,
-					MimTimeSwapPath,
-					minSwapAmount,
-					bondPriceInUSD.Div(bondPriceInUSD, int10e16),
-					15,
-				)
-
-				time.Sleep(15 * time.Second)
-
-				renewBalance(client)
-
 				return
+			case <-headers:
+				if balanceUint64 == 0 {
+					log.Println("balance is zero")
+					continue
+				}
+
+				reserves, err := joePairInstance.GetReserves(&bind.CallOpts{})
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+
+				bondPriceInUSD, err := timeBondDepositoryInstance.BondPriceInUSD(&bind.CallOpts{})
+				if err != nil {
+					log.Println(err)
+					continue
+				}
+
+				minSwapAmount = EstimateMinAmountOut(reserves.Reserve1, reserves.Reserve0, balance)
+
+				minSwapAmountFloat, ok := new(big.Float).SetString(minSwapAmount.String())
+				if !ok {
+					log.Println("cannot cast EstimateMinAmountOut() output of type *big.Int as type *big.Float")
+					continue
+				}
+
+				priceFloat.Quo(minSwapAmountFloat, balanceFloat).Int(&price)
+				roi.Sub(&price, bondPriceInUSD)
+				roi.Mul(&roi, int10000)
+				roi.Div(&roi, bondPriceInUSD)
+				roiInt64 = roi.Int64()
+
+				log.Println(balanceString, "$TIME | MIM", roi.String(), "/", MinROI, "|", bondPriceInUSD.String(), "/", price.String())
+
+				if roiInt64 >= MinROI && roiInt64 < 5000 {
+					log.Println("Bond!")
+
+					RunAtomicBond(
+						Gwei10,
+						FunderAddress,
+						MinterAddress,
+						balance,
+						MimTimeSwapPath,
+						minSwapAmount,
+						bondPriceInUSD.Div(bondPriceInUSD, int10e16),
+						15,
+					)
+
+					time.Sleep(15 * time.Second)
+
+					renewBalance(client)
+
+					return
+				}
 			}
 		}
-	}
+	}()
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
 }
