@@ -386,7 +386,7 @@ func main() {
 				roi.Div(&roi, bondPriceInUSD)
 				roiInt64 = roi.Int64()
 
-				log.Println(balanceString, "$TIME | MIM", roi.String(), "/", Min_ROI, "|", bondPriceInUSD.String(), "/", price.String())
+				log.Println(balanceString, "$TIME | $MIM", roi.String(), "/", Min_ROI, "|", bondPriceInUSD.String(), "/", price.String())
 
 				if roiInt64 >= Min_ROI && roiInt64 < 5000 {
 					log.Println("Bond!")
