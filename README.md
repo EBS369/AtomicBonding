@@ -1,23 +1,26 @@
 # Wonderland (Olympus Pro fork) - Atomic Bonding
-A tool for purchasing and redeeming Wonderland bonds atomically.
-Note: Wonderland bonding is currently disabled.
+A tool for purchasing and redeeming Wonderland bonds atomically.\
+\
+Notes:\
+Wonderland bonding is deprecated.\
+For educational purposes only.\
 
 ## Background
 ### Purchasing bond
-1. Swap $TIME To $MIM
-2. Bond $TIME With $MIM
+1. Swap $TIME to $MIM
+2. Bond $TIME with $MIM
 
 ### Redeeming bond
 1. Redeem $TIME
 
-## Issue (purchase bond)
-1. Exposure to price actions in two transactions.
-2. Non-optimal prices without pair & bond price monitoring.
+## Issue (purchasing bond)
+1. Pair & bond price actions in two transactions.
+2. Non-optimal ROI without pair & bond prices monitoring.
 
 ## Solution
-1. Purchase bond: atomic / in one transaction, no unexpected price actions.
-2. Pair & bond price monitoring. On-chain prices, slippage & fees inclusive.
-3. Redeem bond: safe to use untrusted account as invoker.
+1. Swap & bond actions in one transactions.
+2. Pair & bond prices monitoring with on-chain data, slippage & fees inclusive.
+3. Safe to invoke redeem() with untrusted accounts.
 
-## Example
+## Example (purchasing bond)
 ![AtomicBond](docs/AtomicBond.png)
