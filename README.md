@@ -3,7 +3,7 @@ A tool for purchasing and redeeming Wonderland bonds atomically.\
 \
 Notes:\
 Wonderland bonding is deprecated.\
-For educational purposes only.\
+For educational purposes only.
 
 ## Background
 ### Purchasing bond
